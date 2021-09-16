@@ -105,7 +105,7 @@ function swapBNBForCake(uint256 bnbAmount) private {
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
         uniswapV2Router = _uniswapV2Router;
         WETH = IWETH(uniswapV2Router.WETH());
-        require(WETH.approve(address(uniswapV2Router), type(uint256).max), 'approve failed.');
+        WETH.approve(address(uniswapV2Router), type(uint256).max);
         IERC20(CAKE).safeApprove(MRCVaultAddress, type(uint256).max;
     }
 }
