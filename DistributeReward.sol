@@ -11,7 +11,7 @@ pragma solidity ^0.8.0;
 
 using SafeERC20 for IERC20;
 
-interface IWBNB { //BNB -> WBNB transfer interface
+interface IWETH { //BNB -> WBNB transfer interface
     function deposit() external payable;
     function transfer(address to, uint value) external returns (bool);
     function approve(address spender, uint value) external returns (bool);
@@ -19,10 +19,11 @@ interface IWBNB { //BNB -> WBNB transfer interface
 }
 
 contract DistributeReward {
-    IWBNB private WBNB;
+    IWETH private WETH;
     address public constant dev = 0x408ECB06EF97705Afb02646ae1E5537F370a6bfB;
     address public NFTContract;
     address public constant CAKE = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
+    address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant MRCVaultAddress = 0x3E6BD71C0C2657C7D589EaC42d10533601689f41;
     IUniswapV2Router02 public uniswapV2Router;
     
@@ -34,7 +35,7 @@ modifier notContract() { //Keeps the nonsense out
 
 function swapBNBForCake(uint256 bnbAmount) private {
 
-        WBNB.deposit{value: bnbAmount}(); //first we go to the WBNB store and get some WBNB
+        WETH.deposit{value: bnbAmount}(); //first we go to the WBNB store and get some WBNB
 
         address[] memory path = new address[](2);
         path[0] = WBNB;
@@ -103,8 +104,8 @@ function swapBNBForCake(uint256 bnbAmount) private {
         NFTContract = _NFTContract;
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
         uniswapV2Router = _uniswapV2Router;
-        WBNB = IWBNB(uniswapV2Router.WETH());
-        require(WBNB.approve(address(uniswapV2Router), type(uint256).max), 'approve failed.');
-        require(IERC20(CAKE).safeApprove(MRCVaultAddress, type(uint256).max), 'approve failed.');
+        WETH = IWETH(uniswapV2Router.WETH());
+        require(WETH.approve(address(uniswapV2Router), type(uint256).max), 'approve failed.');
+        IERC20(CAKE).safeApprove(MRCVaultAddress, type(uint256).max;
     }
 }
