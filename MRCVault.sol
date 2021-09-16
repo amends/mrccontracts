@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/IMasterChef.sol";
 import "./MyRevengeNFT.sol";
+import "./Love.sol";
 
 pragma solidity >=0.6.0 <= 0.8.7;
 
@@ -34,6 +35,7 @@ contract MRCVault is Ownable, Pausable {
     address public admin;
     address public treasury;
     address public immutable NFTContract;
+    address public immutable LoveToken;
 
     uint256 public constant MAX_WITHDRAW_FEE = 100; // 1%
     uint256 public constant MAX_WITHDRAW_FEE_PERIOD = 72 hours; // 3 days
@@ -54,6 +56,7 @@ contract MRCVault is Ownable, Pausable {
         address _admin,
         address _treasury,
         address _NFTContract
+        address _LoveToken
     ) {
         token = _token;
         receiptToken = _receiptToken;
@@ -61,6 +64,7 @@ contract MRCVault is Ownable, Pausable {
         admin = _admin;
         treasury = _treasury;
         NFTContract = _NFTContract;
+        LoveToken = _LoveToken;
 
         // Infinite approve
         IERC20(_token).safeApprove(address(_masterchef), type(uint256).max);
@@ -127,6 +131,7 @@ contract MRCVault is Ownable, Pausable {
      */
     function harvest() external notContract whenNotPaused {
         require(MyRevengeNFT(NFTContract).balanceOf(msg.sender) > 0, "Must own a MyRevengeCat NFT to claim!"); //We require an NFT
+        Love(LoveToken).transferFrom(msg.sender, deadAddress, 1e18); //Burns 1 LOVE tokens. Oh no!!
         uint256 before = available(); //This puts it into bal
         IMasterChef(masterchef).leaveStaking(0); //This just gets the yield.
         uint256 bal = available() - before; //Issue removed
