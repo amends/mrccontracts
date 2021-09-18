@@ -13,7 +13,7 @@ pragma solidity ^0.8.0;
 contract MyRevengeCat is Ownable, ReentrancyGuard {
 
     bool _birthed;
-    uint256 public constant interactPrice = 0.05 ether;
+    uint256 public constant interactPrice = 0.015 ether;
     address public immutable LoveToken;
     address public immutable distributeReward;
     event CaretakerLoved(address indexed caretaker, uint256 indexed amount);
@@ -53,15 +53,20 @@ contract MyRevengeCat is Ownable, ReentrancyGuard {
     }
 
     function feed() public payable nonReentrant {
+        uint256 currentHunger = getHunger();
         require(getAlive(), "It appears they are no longer with us.");
-        require(getHunger() <= 75, "I'm not hungry!"); //So we don't go over 100.
+        require(currentHunger <= 75, "I'm not hungry!"); //So we don't go over 100.
         require(msg.value == interactPrice); //No funny business on the contract side, so people can't do whatever without the front end.
 
         _safeTransferBNB(distributeReward, interactPrice); //sends the BNB to the distribute reward contract
 
         lastFeedBlock = block.number;
 
-        hunger = hunger + 25;
+        hunger = currentHunger + 25;
+
+        if (hunger > 100){
+            hunger = 100;
+        }
         
         if (boredom <= 5) {
            boredom = 0;
@@ -79,29 +84,39 @@ contract MyRevengeCat is Ownable, ReentrancyGuard {
     }
     
     function clean() public payable nonReentrant {
+        uint256 currentUncleanliness = getUncleanliness();
         require(getAlive(), "It appears they are no longer with us.");
-        require(getUncleanliness() <= 75, "I'm clean enough!");
+        require(currentUncleanliness <= 75, "I'm clean enough!");
         require(msg.value == interactPrice);
 
         _safeTransferBNB(distributeReward, interactPrice);
 
         lastCleanBlock = block.number;
 
-        uncleanliness = uncleanliness + 25;
+        uncleanliness = currentUncleanliness + 25;
+
+        if (uncleanliness > 100){
+            uncleanliness = 100;
+        }
         
         sendLove(msg.sender, 1e18);
     }
     
     function play() public payable nonReentrant {
+        uint256 currentBoredom = getBoredom();
         require(getAlive(), "It appears they are no longer with us.");
-        require(getBoredom() <= 75, "I'm not bored");
-        require(msg.value == 0.05 ether);
+        require(currentBoredom <= 75, "I'm not bored");
+        require(msg.value == interactPrice);
 
         _safeTransferBNB(distributeReward, interactPrice);
         
         lastPlayBlock = block.number;
         
-        boredom = boredom + 25;
+        boredom = currentBoredom + 25;
+
+        if (boredom > 100){
+            boredom = 100;
+        }
 
         if (hunger <= 4) {
            hunger = 0;
@@ -125,15 +140,20 @@ contract MyRevengeCat is Ownable, ReentrancyGuard {
     }
     
     function sleep() public payable nonReentrant {
+        uint256 currentSleepiness = getSleepiness();
         require(getAlive(), "It appears they are no longer with us.");
-        require(getSleepiness() <= 75, "I'm not sleepy at all!");
+        require(currentSleepiness <= 75, "I'm not sleepy at all!");
         require(msg.value == interactPrice);
 
         _safeTransferBNB(distributeReward, interactPrice);
         
         lastSleepBlock = block.number;
 
-        sleepiness = sleepiness + 25;
+        sleepiness = currentSleepiness + 25;
+
+        if (sleepiness > 100){
+            sleepiness = 100;
+        }
 
         if (uncleanliness <= 5) {
            uncleanliness = 0;
@@ -143,31 +163,21 @@ contract MyRevengeCat is Ownable, ReentrancyGuard {
         
         sendLove(msg.sender, 1e18);
     }
-    //I don't think Im going to keep this in the final contract, but do want it to be checked.
 
-    // function revive() public payable nonReentrant {
-    //     require(!getAlive(), "I'm not dead, what are you doing?");
-    //     require(msg.value == interactPrice);
+    function revive() public onlyOwner { //What happened to Carl? Do we give them another chance..?
+        require(!getAlive(), "I'm not dead, what are you doing?");
 
-    //     payable(distributeReward).transfer(msg.value);
+        lastFeedBlock = block.number;
+        lastCleanBlock = block.number;
+        lastPlayBlock = block.number;
+        lastSleepBlock = block.number;
 
-    //     lastFeedBlock = block.number;
-    //     lastCleanBlock = block.number;
-    //     lastPlayBlock = block.number;
-    //     lastSleepBlock = block.number;
+        boredom = 100;
+        hunger = 100;
+        sleepiness = 100;
+        uncleanliness = 100;
+    } 
 
-    //     boredom = 100;
-    //     hunger = 100;
-    //     sleepiness = 100;
-    //     uncleanliness = 100;
-    // } 
-    // Just for testing the contract. Will be removed in final build.
-    // function testState() public {
-    //         boredom = 30;
-    //         hunger = 50;
-    //         sleepiness = 35;
-    //         uncleanliness = 25;
-    //     }
     
     function getStatus() public view returns (string memory) {
         uint256 mostNeeded = 100;
@@ -188,7 +198,7 @@ contract MyRevengeCat is Ownable, ReentrancyGuard {
         uint256 _sleepiness = getSleepiness();
         
         if (!getAlive()) {
-            return "The revenge cat appears to no longer be with us. Please revive them!";
+            return "The revenge cat appears to no longer be with us.";
         }
         //The goal here is to iterate through the status conditions and check each one against the other to find what it needs most.
         if (_hunger < 50 && _hunger < mostNeeded) {
