@@ -9,8 +9,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 pragma solidity ^0.8.0;
 
-using SafeERC20 for IERC20;
-
 interface IWETH { //BNB -> WBNB transfer interface
     function deposit() external payable;
     function transfer(address to, uint value) external returns (bool);
@@ -18,13 +16,18 @@ interface IWETH { //BNB -> WBNB transfer interface
     function balanceOf(address owner) external view returns (uint);
 }
 
-contract DistributeReward {
+contract DistributeReward is ReentrancyGuard {
+
+    using SafeERC20 for IERC20;
+
     IWETH private WETH;
     address public constant dev = 0x408ECB06EF97705Afb02646ae1E5537F370a6bfB;
     address public NFTContract;
+    address public LoveToken;
     address public constant CAKE = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
     address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    address public constant MRCVaultAddress = 0x3E6BD71C0C2657C7D589EaC42d10533601689f41;
+    address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
+    address public MRCVaultAddr;
     IUniswapV2Router02 public uniswapV2Router;
     
 modifier notContract() { //Keeps the nonsense out
@@ -60,8 +63,9 @@ function swapBNBForCake(uint256 bnbAmount) private {
     receive() external payable {
     }
 
-    function distribute() nonReentrant notContract public {
+    function distribute() public notContract nonReentrant {
         require(MyRevengeNFT(NFTContract).balanceOf(msg.sender) > 0); //Need to own an NFT to call this function.
+        Love(LoveToken).transferFrom(msg.sender, deadAddress, 1e18); //Burns 10 LOVE tokens. Oh no!!
         uint256 balance = address(this).balance; //get the starting balance
 
         uint256 devReward = balance * 20 / 100; //I take my 20% cut
@@ -80,7 +84,7 @@ function swapBNBForCake(uint256 bnbAmount) private {
     function vaultDeposit() internal {
         uint256 tokenAmount = ERC20(CAKE).balanceOf(address(this)); //We check to see how much CAKE we have.
         if (tokenAmount != 0){ //This should always be more than 0, but felt like this was a good idea to have.
-        MRCVault(MRCVaultAddress).deposit(tokenAmount);
+        MRCVault(MRCVaultAddr).deposit(tokenAmount);
         }
     }
 
@@ -100,12 +104,14 @@ function swapBNBForCake(uint256 bnbAmount) private {
     }
 
 
-    constructor(address _NFTContract) {
+    constructor(address _NFTContract, address _LoveToken, address _MRCVaultAddr) {
         NFTContract = _NFTContract;
+        LoveToken = _LoveToken;
+        MRCVaultAddr = _MRCVaultAddr;
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
         uniswapV2Router = _uniswapV2Router;
         WETH = IWETH(uniswapV2Router.WETH());
         WETH.approve(address(uniswapV2Router), type(uint256).max);
-        IERC20(CAKE).safeApprove(MRCVaultAddress, type(uint256).max;
+        IERC20(CAKE).safeApprove(MRCVaultAddr, type(uint256).max);
     }
 }
