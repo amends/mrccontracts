@@ -36,6 +36,8 @@ contract MRCVault is Ownable, Pausable {
     address public treasury;
     address public immutable NFTContract;
     address public immutable LoveToken;
+    address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
+
 
     uint256 public constant MAX_WITHDRAW_FEE = 100; // 1%
     uint256 public constant MAX_WITHDRAW_FEE_PERIOD = 72 hours; // 3 days
@@ -55,7 +57,7 @@ contract MRCVault is Ownable, Pausable {
         IMasterChef _masterchef,
         address _admin,
         address _treasury,
-        address _NFTContract
+        address _NFTContract,
         address _LoveToken
     ) {
         token = _token;
